@@ -23,7 +23,7 @@ class Partida extends Model
     protected $table = 'partidas';
 
     protected $fillable = [
-        'anio', 'dpto', 'unidad', 'actividad', 'subactividad', 'sigma', 'cuenta',
+        'anio', 'version', 'dpto', 'unidad', 'actividad', 'subactividad', 'sigma', 'cuenta',
         'dep_codigo', 'un_codigo', 'es_ejemplo',
         'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10', 'm11', 'm12',
     ];
@@ -44,10 +44,10 @@ class Partida extends Model
         return $this->hasMany(Observacion::class)->orderBy('id');
     }
 
-    /** Solo las partidas del año que se está viendo (o del indicado). */
-    public function scopeDelAnio(Builder $q, ?int $anio = null): void
+    /** Solo las partidas del año y la versión que se están viendo (o de los indicados). */
+    public function scopeDelAnio(Builder $q, ?int $anio = null, ?string $version = null): void
     {
-        $q->where('anio', $anio ?? Anio::actual());
+        $q->where('anio', $anio ?? Anio::actual())->where('version', $version ?? Anio::version());
     }
 
     /** @return string[] m1..m12 */

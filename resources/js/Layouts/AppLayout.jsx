@@ -42,6 +42,16 @@ export default function AppLayout({ children }) {
           >
             {anios.map((a) => <option key={a} value={a}>{a}</option>)}
           </select>
+          <select
+            className="inp !w-auto py-1.5 font-semibold text-ink"
+            aria-label="Versión del presupuesto"
+            value={props.version}
+            onChange={(e) => router.post('/anio', { anio: props.anio, version: e.target.value }, { preserveScroll: true })}
+          >
+            {Object.entries(props.versiones).map(([v, nombre]) => (
+              <option key={v} value={v}>{nombre}{props.cargas[props.anio]?.[v] ? '' : ' (sin datos)'}</option>
+            ))}
+          </select>
         </label>
         <nav className="ml-auto flex flex-wrap gap-1">
           {TABS.map(([href, label]) => {

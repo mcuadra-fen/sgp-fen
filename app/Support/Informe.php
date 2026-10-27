@@ -29,9 +29,9 @@ class Informe
     }
 
     /** @return array<string,int> clasificación SIGMA => total anual */
-    public static function totalesPorSigma(int $anio): array
+    public static function totalesPorSigma(int $anio, string $version = 'inicial'): array
     {
-        return Partida::delAnio($anio)
+        return Partida::delAnio($anio, $version)
             ->selectRaw('sigma, SUM(' . Partida::totalSql() . ') as v')
             ->groupBy('sigma')
             ->pluck('v', 'sigma')
@@ -41,12 +41,12 @@ class Informe
 
     /**
      * Filas del informe. Cada una: tipo (total, item, subtotal, neto, separador), nombre,
-     * a (año base), b (año comparado), var (b − a) y pct (var / a; null = n/a).
+     * a (año base), b (año comparado), var (b − a) y pct (var / a; null = n/a). Cada año con su versión.
      */
-    public static function filas(int $anioA, int $anioB): array
+    public static function filas(int $anioA, int $anioB, string $versionA = 'inicial', string $versionB = 'inicial'): array
     {
-        $ta = self::totalesPorSigma($anioA);
-        $tb = self::totalesPorSigma($anioB);
+        $ta = self::totalesPorSigma($anioA, $versionA);
+        $tb = self::totalesPorSigma($anioB, $versionB);
         $sigmas = array_unique([...array_keys($ta), ...array_keys($tb)]);
 
         $suma = fn (array $t, array $lista) => array_sum(array_map(fn ($s) => $t[$s] ?? 0, $lista));

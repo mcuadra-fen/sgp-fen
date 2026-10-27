@@ -22,6 +22,10 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             'anio' => fn () => Anio::actual(),
             'anios' => fn () => Anio::disponibles(),
+            'version' => fn () => Anio::version(),
+            'versiones' => Anio::VERSIONES,
+            // año => [versión => n], para marcar en el selector las versiones sin datos
+            'cargas' => fn () => (object) Anio::cargas(),
             'flash' => fn () => [
                 'ok' => $request->session()->get('ok'),
                 'error' => $request->session()->get('error'),

@@ -213,7 +213,7 @@ class PresupuestoTest extends TestCase
         $this->seed(PartidaSeeder::class);
         $tsv = Presupuesto::toTsv(Partida::orderBy('id')->get()->map->comoFila()->all());
 
-        $this->post('/datos/importar', ['texto' => $tsv, 'modo' => 'reemplazar', 'anio' => (int) date('Y')])->assertRedirect('/partidas');
+        $this->post('/datos/importar', ['texto' => $tsv, 'modo' => 'reemplazar', 'anio' => (int) date('Y'), 'version' => 'inicial'])->assertRedirect('/partidas');
 
         $this->assertSame(5, Partida::count());
         $this->assertSame(109976107, Partida::all()->sum->total);
@@ -236,7 +236,7 @@ class PresupuestoTest extends TestCase
         $hoy = (int) date('Y');
         $tsv = Presupuesto::toTsv(Partida::orderBy('id')->limit(2)->get()->map->comoFila()->all());
 
-        $this->post('/datos/importar', ['texto' => $tsv, 'modo' => 'reemplazar', 'anio' => 2025])->assertRedirect('/partidas');
+        $this->post('/datos/importar', ['texto' => $tsv, 'modo' => 'reemplazar', 'anio' => 2025, 'version' => 'inicial'])->assertRedirect('/partidas');
 
         $this->assertSame(5, Partida::where('anio', $hoy)->count());
         $this->assertSame(2, Partida::where('anio', 2025)->count());
@@ -254,8 +254,8 @@ class PresupuestoTest extends TestCase
         $this->seed(PartidaSeeder::class);
         $hoy = (int) date('Y');
         $tsv = Presupuesto::toTsv(Partida::orderBy('id')->limit(2)->get()->map->comoFila()->all());
-        $this->post('/datos/importar', ['texto' => $tsv, 'modo' => 'agregar', 'anio' => 2025]);
-        $this->post('/datos/importar', ['texto' => $tsv, 'modo' => 'reemplazar', 'anio' => 2025]); // 2 a la papelera
+        $this->post('/datos/importar', ['texto' => $tsv, 'modo' => 'agregar', 'anio' => 2025, 'version' => 'inicial']);
+        $this->post('/datos/importar', ['texto' => $tsv, 'modo' => 'reemplazar', 'anio' => 2025, 'version' => 'inicial']); // 2 a la papelera
         $this->travel(2)->seconds();
 
         $res = $this->from('/datos')->delete('/datos/anios/2025')->assertRedirect('/datos')->assertSessionHas('undo');
@@ -267,6 +267,47 @@ class PresupuestoTest extends TestCase
         $this->assertSame(2, Partida::where('anio', 2025)->count());
 
         $this->from('/datos')->delete('/datos/anios/1999')->assertSessionHas('error');
+    }
+
+    public function test_proyeccion_completa_enero_a_junio_con_el_inicial(): void
+    {
+        $this->seed(PartidaSeeder::class);
+        $hoy = (int) date('Y');
+        $categoria = \App\Models\Categoria::where('nombre', 'Proyectos')->firstOrFail();
+        $primera = Partida::orderBy('id')->first();
+        $primera->forceFill(['categoria_id' => $categoria->id])->save();
+
+        // Planilla de proyección: solo julio a diciembre, y una fila que no está en el inicial
+        $filas = Partida::orderBy('id')->limit(3)->get()->map->comoFila()->all();
+        $filas[] = [...$filas[0], 'cuenta' => 'CUENTA NUEVA'];
+        $filas = array_map(fn ($f) => [...$f, 'meses' => [0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 100, 100]], $filas);
+        $tsv = Presupuesto::toTsv($filas);
+        $datos = ['texto' => $tsv, 'anio' => $hoy, 'version' => 'proyeccion', 'completar' => true];
+
+        $this->from('/datos')->post('/datos/revisar', $datos)
+            ->assertSessionHas('preview.coinciden', 3)->assertSessionHas('preview.existentes', 0);
+
+        $this->post('/datos/importar', [...$datos, 'modo' => 'agregar'])->assertRedirect('/partidas');
+
+        $this->assertSame(5, Partida::where('version', 'inicial')->count()); // el inicial no cambia
+        $proy = Partida::where('version', 'proyeccion')->orderBy('id')->get();
+        $this->assertCount(4, $proy);
+        $this->assertSame([...array_slice($primera->meses(), 0, 6), 100, 100, 100, 100, 100, 100], $proy[0]->meses());
+        $this->assertSame($categoria->id, $proy[0]->categoria_id);
+        $this->assertSame([0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 100, 100], $proy[3]->meses()); // sin pareja
+
+        // Queda a la vista la proyección; se puede volver al inicial
+        $this->get('/partidas')->assertInertia(fn (Assert $page) => $page->where('version', 'proyeccion')->has('partidas', 4));
+        $this->post('/anio', ['anio' => $hoy, 'version' => 'inicial']);
+        $this->get('/partidas')->assertInertia(fn (Assert $page) => $page->where('version', 'inicial')->has('partidas', 5));
+
+        $this->get("/informe?a=$hoy&va=inicial&b=$hoy&vb=proyeccion")
+            ->assertInertia(fn (Assert $page) => $page->where('va', 'inicial')->where('vb', 'proyeccion'));
+
+        // Eliminar la proyección no toca el inicial
+        $this->from('/datos')->delete("/datos/anios/$hoy?version=proyeccion")->assertSessionHas('undo');
+        $this->assertSame(0, Partida::where('version', 'proyeccion')->count());
+        $this->assertSame(5, Partida::where('version', 'inicial')->count());
     }
 
     public function test_revisar_informa_filas_validas_sin_guardar(): void

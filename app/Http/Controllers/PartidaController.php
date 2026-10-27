@@ -39,7 +39,7 @@ class PartidaController extends Controller
 
     public function store(PartidaRequest $request)
     {
-        Partida::create([...$request->datos(), 'anio' => Anio::actual()]);
+        Partida::create([...$request->datos(), 'anio' => Anio::actual(), 'version' => Anio::version()]);
 
         return redirect()->route('partidas.index')->with('ok', 'Partida agregada');
     }

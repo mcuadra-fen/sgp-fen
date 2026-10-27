@@ -15,20 +15,30 @@ const th = 'h-10 whitespace-nowrap border-b border-lineStrong bg-surface2 px-3 t
 const celda = 'border-b border-line px-3 py-2.5'
 const num = ' text-right font-mono'
 
-export default function Informe({ a, b, filas }) {
-  const { anios } = usePage().props
-  const [titulo, setTitulo] = useState(`Presupuesto ${b} vs Proyección Cierre ${a}`)
-  const [colA, setColA] = useState(`PROY. CIERRE ${a}`)
-  const [colB, setColB] = useState(`PRESUPUESTO ${b}`)
-  const opciones = [...new Set([...anios, a, b])].sort((x, y) => y - x)
+// Nombres que se proponen para el título y las columnas según la versión
+const largo = (anio, v) => (v === 'proyeccion' ? `Proyección Cierre ${anio}` : `Presupuesto ${anio}`)
+const corto = (anio, v) => (v === 'proyeccion' ? `PROY. CIERRE ${anio}` : `PRESUPUESTO ${anio}`)
 
-  // Al cambiar los años se vuelven a proponer los títulos
-  const ir = (na, nb) => {
-    setTitulo(`Presupuesto ${nb} vs Proyección Cierre ${na}`)
-    setColA(`PROY. CIERRE ${na}`)
-    setColB(`PRESUPUESTO ${nb}`)
-    router.get('/informe', { a: na, b: nb }, { preserveState: true, preserveScroll: true })
+export default function Informe({ a, va, b, vb, filas }) {
+  const { anios, versiones, cargas } = usePage().props
+  const [titulo, setTitulo] = useState(`${largo(b, vb)} vs ${largo(a, va)}`)
+  const [colA, setColA] = useState(corto(a, va))
+  const [colB, setColB] = useState(corto(b, vb))
+  // Cada opción es un año con una de sus versiones, p. ej. «2026|proyeccion»
+  const opciones = [...new Set([...anios, a, b])].sort((x, y) => y - x)
+    .flatMap((y) => Object.entries(versiones).map(([v, nombre]) => ({
+      valor: `${y}|${v}`,
+      texto: `${y} · ${nombre}${cargas[y]?.[v] ? '' : ' (sin datos)'}`,
+    })))
+
+  // Al cambiar los años o versiones se vuelven a proponer los títulos
+  const ir = (na, nva, nb, nvb) => {
+    setTitulo(`${largo(nb, nvb)} vs ${largo(na, nva)}`)
+    setColA(corto(na, nva))
+    setColB(corto(nb, nvb))
+    router.get('/informe', { a: na, va: nva, b: nb, vb: nvb }, { preserveState: true, preserveScroll: true })
   }
+  const partir = (s) => { const [y, v] = s.split('|'); return [Number(y), v] }
 
   const descargar = async () => {
     const XLSX = await import('xlsx')
@@ -55,16 +65,16 @@ export default function Informe({ a, b, filas }) {
     <section className="flex flex-col gap-3">
       <div className="no-print panel flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1">
-          <span className="lbl">Año base</span>
-          <select className="inp !w-auto" value={a} onChange={(e) => ir(Number(e.target.value), b)}>
-            {opciones.map((x) => <option key={x} value={x}>{x}</option>)}
+          <span className="lbl">Base</span>
+          <select className="inp !w-auto" value={`${a}|${va}`} onChange={(e) => ir(...partir(e.target.value), b, vb)}>
+            {opciones.map((o) => <option key={o.valor} value={o.valor}>{o.texto}</option>)}
           </select>
         </label>
         <span className="pb-2 text-ink3">comparado con</span>
         <label className="flex flex-col gap-1">
-          <span className="lbl">Año</span>
-          <select className="inp !w-auto" value={b} onChange={(e) => ir(a, Number(e.target.value))}>
-            {opciones.map((x) => <option key={x} value={x}>{x}</option>)}
+          <span className="lbl">Comparar</span>
+          <select className="inp !w-auto" value={`${b}|${vb}`} onChange={(e) => ir(a, va, ...partir(e.target.value))}>
+            {opciones.map((o) => <option key={o.valor} value={o.valor}>{o.texto}</option>)}
           </select>
         </label>
         <div className="flex-1" />
@@ -95,7 +105,7 @@ export default function Informe({ a, b, filas }) {
                     <span className="hidden print:inline">{v}</span>
                   </th>
                 ))}
-                <th className={th + ' text-right'}>Var {colB.replace(/^PRESUPUESTO/i, 'PPTO')} vs {colA.replace(/^PROY\.\s*CIERRE/i, 'PROY')}</th>
+                <th className={th + ' text-right'}>Var {colB.replace(/^PRESUPUESTO/i, 'PPTO')} vs {colA.replace(/^PROY\.\s*CIERRE/i, 'PROY').replace(/^PRESUPUESTO/i, 'PPTO')}</th>
                 <th className={th + ' w-[9%] text-right'}>%</th>
               </tr>
             </thead>
