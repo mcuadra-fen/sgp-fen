@@ -19,6 +19,9 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_URL" value="http://localhost"/>
+        <env name="KEYCLOAK_REDIRECT_URI" value="/signin-oidc"/>
+        <env name="KEYCLOAK_POST_LOGOUT_REDIRECT_URI" value="/signout-callback-oidc"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

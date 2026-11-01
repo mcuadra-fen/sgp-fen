@@ -33,6 +33,12 @@ class UserFactory extends Factory
         ];
     }
 
+    /** Administrador: su correo está en config sgp.admins (acceso completo al sistema). */
+    public function admin(): static
+    {
+        return $this->state(fn () => ['email' => config('sgp.admins')[0]]);
+    }
+
     /**
      * Indicate that the model's email address should be unverified.
      */

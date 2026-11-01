@@ -20,6 +20,12 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
+            // Persona que ingresó por Keycloak (null en la pantalla de ingreso)
+            'usuario' => fn () => $request->user() ? [
+                'nombre' => $request->user()->name,
+                'email' => $request->user()->email,
+                'admin' => $request->user()->esAdmin(),
+            ] : null,
             'anio' => fn () => Anio::actual(),
             'anios' => fn () => Anio::disponibles(),
             'version' => fn () => Anio::version(),

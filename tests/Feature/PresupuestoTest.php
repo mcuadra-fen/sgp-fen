@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Partida;
+use App\Models\User;
 use App\Support\Presupuesto;
 use Database\Seeders\PartidaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,6 +13,12 @@ use Tests\TestCase;
 class PresupuestoTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAs(User::factory()->admin()->create()); // todo el sistema exige haber ingresado
+    }
 
     private function valido(array $extra = []): array
     {
