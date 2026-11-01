@@ -55,4 +55,36 @@
   .pill-ok { @apply bg-okSoft text-ok; }
   .panel { @apply min-w-0 rounded-lg border border-line bg-surface p-4; }
   .panel-title { @apply mb-3 text-sm font-semibold; }
+
+  /* Barra lateral: azul institucional oscuro (igual en modo claro y oscuro), con acento dorado en la opción activa */
+  .side {
+    --s-ink: #eef3fb; --s-ink-2: #b4c3dc; --s-ink-3: #7f93b5; --s-line: rgba(255, 255, 255, 0.1);
+    --s-hover: rgba(255, 255, 255, 0.07); --s-activo: rgba(255, 255, 255, 0.13); --s-dorado: #e6b450;
+    background: linear-gradient(180deg, #0f2a52 0%, #0b1f3d 55%, #081830 100%);
+    color: var(--s-ink); border-right: 1px solid #06122a;
+  }
+  .side-marca { @apply flex items-center gap-2.5 border-b pb-4; border-color: var(--s-line); }
+  .side-logo {
+    @apply grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[13px] font-bold tracking-tight;
+    background: linear-gradient(135deg, var(--s-dorado), #c98f2a); color: #0b1f3d;
+  }
+  .side-titulo { @apply px-3 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.12em]; color: var(--s-ink-3); }
+  .side-sel {
+    @apply w-full rounded-md px-[9px] py-1.5 text-[13px] font-semibold;
+    background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); color: var(--s-ink);
+  }
+  .side-sel:focus { border-color: var(--s-dorado); }
+  .side-sel option { color: #14213d; background: #fff; }
+  .side-link { @apply flex items-center gap-2.5 rounded-md px-3 py-2 font-medium transition-colors; color: var(--s-ink-2); }
+  .side-link:hover { background: var(--s-hover); color: var(--s-ink); }
+  .side-link-activo { background: var(--s-activo); color: #fff; box-shadow: inset 3px 0 0 var(--s-dorado); }
+  .side-punto { @apply h-1.5 w-1.5 shrink-0 rounded-full; background: currentColor; opacity: 0.45; }
+  .side-link-activo .side-punto { background: var(--s-dorado); opacity: 1; }
+  .side-pie { @apply mt-auto flex items-center gap-2.5 border-t pt-3 text-xs; border-color: var(--s-line); color: var(--s-ink-2); }
+  .side-avatar { @apply grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold; background: rgba(255, 255, 255, 0.12); color: var(--s-ink); }
+  .side-btn {
+    @apply shrink-0 cursor-pointer rounded-md px-2 py-[3px] text-xs font-medium;
+    border: 1px solid rgba(255, 255, 255, 0.2); color: var(--s-ink);
+  }
+  .side-btn:hover { border-color: var(--s-dorado); color: var(--s-dorado); }
 }

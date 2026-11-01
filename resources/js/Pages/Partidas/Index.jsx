@@ -4,6 +4,15 @@ import AppLayout from '../../Layouts/AppLayout.jsx'
 import Grilla from '../../components/Grilla.jsx'
 import { fmt, sum, xsrf } from '../../lib/data.js'
 
+// Mismos criterios que «Revisión de datos» en el Resumen (ResumenController)
+const clave = (r) => `${r.unidad}\u0000${r.cuenta}`
+const REVISAR = {
+  'sin-monto': { titulo: 'Partidas sin monto en ningún mes', cumple: (r) => sum(r.meses) === 0 },
+  'sin-codigos': { titulo: 'Partidas sin dep_codigo o un_codigo', cumple: (r) => !r.dep_codigo || !r.un_codigo },
+  repetidas: { titulo: 'Unidad + cuenta repetidas (agrupadas)', cumple: (r, veces) => veces[clave(r)] > 1 },
+  ejemplos: { titulo: 'Partidas de ejemplo', cumple: (r) => r.es_ejemplo },
+}
+
 export default function Index({ partidas }) {
   // Copia local para que la edición de celdas se vea al instante; el servidor la confirma.
   const [rows, setRows] = useState(partidas)
@@ -20,6 +29,11 @@ export default function Index({ partidas }) {
   const [actividad, setActividad] = useState('')
   const [sigma, setSigma] = useState('')
   const [error, setError] = useState('')
+  // Llega desde «Revisión de datos» del Resumen: /partidas?revisar=sin-monto
+  const [revisar, setRevisar] = useState(() => {
+    const v = new URLSearchParams(window.location.search).get('revisar')
+    return REVISAR[v] ? v : null
+  })
 
   const uniq = (k) => [...new Set(rows.map((r) => r[k]))].filter(Boolean).sort((a, b) => a.localeCompare(b, 'es'))
   const actividades = useMemo(() => uniq('actividad'), [rows])
@@ -27,11 +41,16 @@ export default function Index({ partidas }) {
 
   const lista = useMemo(() => {
     const t = q.toLowerCase()
-    return rows.filter((r) =>
+    const veces = {}
+    rows.forEach((r) => { veces[clave(r)] = (veces[clave(r)] ?? 0) + 1 })
+    const out = rows.filter((r) =>
+      (!revisar || REVISAR[revisar].cumple(r, veces)) &&
       (!actividad || r.actividad === actividad) && (!sigma || r.sigma === sigma) &&
       (!t || [r.dpto, r.unidad, r.actividad, r.subactividad, r.sigma, r.cuenta, r.dep_codigo, r.un_codigo]
         .join(' ').toLowerCase().includes(t)))
-  }, [rows, q, actividad, sigma])
+    // Las repetidas se muestran juntas para compararlas
+    return revisar === 'repetidas' ? out.sort((a, b) => clave(a).localeCompare(clave(b), 'es') || a.id - b.id) : out
+  }, [rows, q, actividad, sigma, revisar])
 
   const poner = (id, i, n) =>
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, meses: r.meses.map((v, j) => (j === i ? n : v)) } : r)))
@@ -99,6 +118,19 @@ export default function Index({ partidas }) {
         <div className="flex-1" />
         <Link href="/partidas/create" className="btn btn-primary">+ Nueva partida</Link>
       </div>
+
+      {revisar && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface2 px-3 py-2 text-[13px]" role="status">
+          <span className="pill pill-bad">Revisar</span>
+          <b>{REVISAR[revisar].titulo}</b>
+          <span className="text-ink2">· {lista.length} {lista.length === 1 ? 'partida' : 'partidas'}</span>
+          {revisar === 'repetidas' && (
+            <span className="text-xs text-ink3">Pueden ser correctas (p. ej. distinta actividad); si sobran, márquelas y elimínelas.</span>
+          )}
+          <div className="flex-1" />
+          <button className="btn btn-sm" onClick={() => setRevisar(null)}>Ver todas las partidas</button>
+        </div>
+      )}
 
       {error && <div className="mb-3 rounded-md bg-badSoft px-3 py-2 text-[13px] text-bad" role="alert">{error}</div>}
 

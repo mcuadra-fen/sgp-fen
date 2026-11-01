@@ -36,16 +36,16 @@ class ResumenController extends Controller
 
         $alertas = [];
         if ($ejemplos) {
-            $alertas[] = ['warn', 'Ejemplo', "$ejemplos partidas de ejemplo siguen en el presupuesto. Quítelas en Importar y exportar."];
+            $alertas[] = ['warn', 'Ejemplo', "$ejemplos partidas de ejemplo siguen en el presupuesto. Quítelas en Importar y exportar.", 'ejemplos'];
         }
         if ($sinMonto) {
-            $alertas[] = ['bad', 'Revisar', "$sinMonto partidas sin monto en ningún mes."];
+            $alertas[] = ['bad', 'Revisar', "$sinMonto partidas sin monto en ningún mes.", 'sin-monto'];
         }
         if ($sinCodigos) {
-            $alertas[] = ['bad', 'Revisar', "$sinCodigos partidas sin dep_codigo o un_codigo."];
+            $alertas[] = ['bad', 'Revisar', "$sinCodigos partidas sin dep_codigo o un_codigo.", 'sin-codigos'];
         }
         if ($duplicadas) {
-            $alertas[] = ['bad', 'Revisar', "$duplicadas combinaciones unidad + cuenta aparecen más de una vez."];
+            $alertas[] = ['bad', 'Revisar', "$duplicadas combinaciones unidad + cuenta aparecen más de una vez.", 'repetidas'];
         }
         if (! $alertas) {
             $alertas[] = ['ok', 'Listo', 'Sin observaciones en los datos.'];

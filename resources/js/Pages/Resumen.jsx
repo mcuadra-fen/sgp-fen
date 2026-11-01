@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react'
 import AppLayout from '../Layouts/AppLayout.jsx'
 import BarChart from '../components/BarChart.jsx'
 import HBars from '../components/HBars.jsx'
@@ -33,9 +34,13 @@ export default function Resumen({ meses, total, cantidad, ejemplos, mayorMes, ma
         <div className="panel">
           <h2 className="panel-title">Revisión de datos</h2>
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
-            {alertas.map(([tipo, etiqueta, mensaje]) => (
+            {alertas.map(([tipo, etiqueta, mensaje, revisar]) => (
               <li key={mensaje} className="flex items-start gap-2.5 text-[13px]">
-                <span className={PILL[tipo]}>{etiqueta}</span><span>{mensaje}</span>
+                <span className={PILL[tipo]}>{etiqueta}</span>
+                <span>
+                  {mensaje}{' '}
+                  {revisar && <Link href={`/partidas?revisar=${revisar}`} className="whitespace-nowrap font-medium text-accent hover:underline">Ver →</Link>}
+                </span>
               </li>
             ))}
           </ul>
